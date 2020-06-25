@@ -7,5 +7,6 @@ import (
 func main() {
 	fmt.Println("Starting")
 	InitDB()
+	TestAPIGetAll()
 	CreateRoutes()
 }
