@@ -16,6 +16,9 @@ func main() {
 	dm.Insert()
 	dm.Insert()
 	fmt.Println(dm.Get())
+	dm.Update(1)
+	dm.Delete(3)
+	fmt.Println(dm.Get())
 
 	TestAPIGetAll()
 	CreateRoutes()

@@ -50,3 +50,34 @@ func (m *DBMem) Insert() {
 	newRow := dbRow{ID: id, Data: `{"FistName": "Alec", "LastName": "P", "Age": 4}`}
 	m.Rows = append(m.Rows, newRow)
 }
+
+// Update row
+func (m *DBMem) Update(idToUpdate int) {
+	if len(m.Rows) < idToUpdate {
+		fmt.Println("ID is out of range")
+		return
+	}
+
+	for i := 0; i < len(m.Rows); i++ {
+		if m.Rows[i].ID == idToUpdate {
+			m.Rows[i].Data = `{"FistName": "Stan", "LastName": "Marsh", "Age": 6}`
+			return
+		}
+	}
+
+	fmt.Println("ID not found")
+}
+
+// Delete row with ID
+func (m *DBMem) Delete(idToDelete int) {
+	if len(m.Rows) < idToDelete {
+		fmt.Println("ID is out of range")
+		return
+	}
+
+	if len(m.Rows) == idToDelete {
+		m.Rows = m.Rows[:len(m.Rows)-1]
+		return
+	}
+	m.Rows = append(m.Rows[:idToDelete], m.Rows[idToDelete+1:]...)
+}
