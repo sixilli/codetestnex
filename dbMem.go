@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 )
 
 type dbRow struct {
@@ -26,22 +27,26 @@ func (m *DBMem) Get() []string {
 		fmt.Println("Database is empty")
 		return []string{}
 	}
-	out, err := json.Marshal(m.Rows)
-	if err != nil {
-		fmt.Println(err)
-		return []string{}
+
+	// Go through each row and jsonify the struct
+	var jsonOutput []string
+	for i := 0; i < len(m.Rows); i++ {
+		row := &m.Rows[i]
+		b, err := json.Marshal(row)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		// Kinda hacky, but the JSON object had added in escape characters
+		jsonOutput = append(jsonOutput, strings.ReplaceAll(string(b), `\`, ""))
 	}
 
-	var jsonOutput []string
-	for i := 0; i < len(out); i++ {
-		jsonOutput = append(jsonOutput, string(out[i]))
-	}
 	return jsonOutput
 }
 
 // Insert new row into the db
 func (m *DBMem) Insert() {
 	id := len(m.Rows) + 1
-	newRow := dbRow{ID: id, Data: `{FistName: "Alec", LastName: "P" Age: 4, }`}
+	newRow := dbRow{ID: id, Data: `{"FistName": "Alec", "LastName": "P", "Age": 4}`}
 	m.Rows = append(m.Rows, newRow)
 }

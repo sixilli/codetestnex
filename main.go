@@ -14,6 +14,7 @@ func main() {
 	dm := InitDBM()
 	dm.Insert()
 	dm.Insert()
+	dm.Insert()
 	fmt.Println(dm.Get())
 
 	TestAPIGetAll()
