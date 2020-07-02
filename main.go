@@ -12,11 +12,24 @@ func main() {
 
 	// In memory version
 	dm := InitDBM()
-	dm.Insert()
-	dm.Insert()
-	dm.Insert()
-	fmt.Println(dm.Get())
-	dm.Update(1)
+
+    person := Person{
+        FirstName: "Alec",
+        LastName: "P",
+        Age:  6,
+    }
+
+    newPerson := Person{
+        FirstName: "Stan",
+        LastName: "Guy",
+        Age:  10,
+    }
+
+	dm.Insert(person)
+	dm.Insert(person)
+	dm.Insert(person)
+	fmt.Println(dm.Get(), "\n")
+	dm.Update(2, newPerson)
 	dm.Delete(3)
 	fmt.Println(dm.Get())
 
