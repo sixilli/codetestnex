@@ -3,7 +3,15 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+    "time"
 )
+
+type dbEvent struct {
+    Op        string `json:"Op"`
+    ID        int    `json:ID`
+    Timestamp string `json:Time`
+    Data      string `json:Data`
+}
 
 type dbRow struct {
 	ID   int    `json:"ID"`
@@ -12,8 +20,10 @@ type dbRow struct {
 
 // DBMem - This is my take on learning how to create a nice interface
 // to the following group of functions.
+// Might be bad design to add history to this, but makes things easier
 type DBMem struct {
 	Rows []dbRow
+    History []dbEvent
 }
 
 // InitDBM - Initialize DB in memory that will serve as the parent interface
@@ -57,10 +67,11 @@ func (m *DBMem) Insert(data Person) {
 
 	newRow := dbRow{ID: id, Data: string(bytes)}
 	m.Rows = append(m.Rows, newRow)
+    m.appendHistory("INSERT", id, newRow.Data, time.Now().String())
 }
 
 // Update row
-// Could be greedy and update, but currently searching for proper ID
+// Could be greedy, but currently searching for proper ID
 func (m *DBMem) Update(idToUpdate int, data Person) {
 	if len(m.Rows) < idToUpdate {
 		fmt.Println("ID is out of range")
@@ -75,6 +86,7 @@ func (m *DBMem) Update(idToUpdate int, data Person) {
 	for i := 0; i < len(m.Rows); i++ {
 		if m.Rows[i].ID == idToUpdate {
 			m.Rows[i].Data = string(bytes)
+            m.appendHistory("Update", m.Rows[i].ID, m.Rows[i].Data, time.Now().String())
 			return
 		}
 	}
@@ -89,11 +101,14 @@ func (m *DBMem) Delete(idToDelete int) {
 		return
 	}
 
+    rowData := m.Rows[idToDelete]
+
 	if len(m.Rows) == idToDelete {
 		m.Rows = m.Rows[:len(m.Rows)-1]
 		return
 	}
 	m.Rows = append(m.Rows[:idToDelete], m.Rows[idToDelete+1:]...)
+    m.appendHistory("DELETE", rowData.ID, rowData.Data, time.Now().String())
     m.reindexDb(idToDelete)
 }
 
@@ -102,4 +117,14 @@ func (m *DBMem) reindexDb(deletedId int) {
     for i := deletedId; i < len(m.Rows); i++ {
         m.Rows[i].ID = m.Rows[i].ID - 1
     }
+}
+
+func (m *DBMem) appendHistory(operation string, id int, data string, timestamp string) {
+    newEvent := dbEvent{
+        Op: operation,
+        ID: id,
+        Data: data,
+        Timestamp: timestamp,
+    }
+    m.History = append(m.History, newEvent)
 }

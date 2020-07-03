@@ -8,21 +8,7 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
-	"github.com/gorilla/websocket"
 )
-
-// Dead code for websockets
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-}
-
-// Client Dead code for websockets
-type Client struct {
-	hub  *Hub
-	conn *websocket.Conn
-	send chan []byte
-}
 
 // CreateRoutes uses gorilla mux router to handle requests
 // API update example
@@ -34,7 +20,8 @@ func CreateRoutes() {
 	r.HandleFunc("/read", readEntry).Methods("GET")
 	r.HandleFunc("/delete/{id}", deleteEntry).Methods("DELETE")
 	r.HandleFunc("/update/{id}/{firstName}/{lastName}/{age}", updateEntry).Methods("PUT")
-	r.HandleFunc("/live", websocketEndpoint).Methods("GET")
+	r.HandleFunc("/live", ServeLive)
+	r.HandleFunc("/ws", ServeWs)
 	log.Fatal(http.ListenAndServe(":8080", r))
 }
 
@@ -96,48 +83,4 @@ func updateEntry(w http.ResponseWriter, r *http.Request) {
 	}
 
 	APIUpdateEntry(id, toUpdate)
-}
-
-// Leftover websocket code
-func reader(conn *websocket.Conn) {
-	for {
-		messageType, p, err := conn.ReadMessage()
-		if err != nil {
-			log.Println(err)
-			return
-		}
-
-		log.Println(string(p))
-
-		if err := conn.WriteMessage(messageType, p); err != nil {
-			log.Println(err)
-			return
-		}
-	}
-}
-
-// Leftover websocket code
-func websocketEndpoint(w http.ResponseWriter, r *http.Request) {
-	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
-
-	ws, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Println(err)
-	}
-
-	log.Println("Client connected")
-
-	if r.URL.Path != "/live" {
-		http.Error(w, "Not found", http.StatusNotFound)
-		return
-	}
-
-	if r.Method != "GET" {
-		http.Error(w, "Method not found", http.StatusMethodNotAllowed)
-		return
-	}
-
-	http.ServeFile(w, r, "index.html")
-
-	reader(ws)
 }
