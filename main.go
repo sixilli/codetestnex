@@ -27,8 +27,12 @@ func main() {
         dm.Insert(person)
     }
     dm.PrintDB()
+    fmt.Println("--------------Testing Update and Delete--------------")
 	dm.Update(5, newPerson)
 	dm.Delete(10)
+	dm.Delete(2)
+	dm.Delete(4)
+	dm.Delete(19)
     dm.PrintDB()
 
 

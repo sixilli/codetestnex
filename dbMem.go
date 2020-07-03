@@ -16,6 +16,7 @@ type DBMem struct {
 	Rows []dbRow
 }
 
+// InitDBM - Initialize DB in memory that will serve as the parent interface
 func InitDBM() DBMem {
 	return DBMem{}
 }
@@ -27,12 +28,11 @@ func (m *DBMem) Get() []Person {
 		return []Person{}
 	}
 
-	// Go through each row and jsonify the struct
+	// Go through each row and convert json to a struct
 	var output []Person
 	for i := 0; i < len(m.Rows); i++ {
         personStruct := Person{}
         json.Unmarshal([]byte(m.Rows[i].Data), &personStruct)
-
 		output = append(output, personStruct)
 	}
 
@@ -60,6 +60,7 @@ func (m *DBMem) Insert(data Person) {
 }
 
 // Update row
+// Could be greedy and update, but currently searching for proper ID
 func (m *DBMem) Update(idToUpdate int, data Person) {
 	if len(m.Rows) < idToUpdate {
 		fmt.Println("ID is out of range")
@@ -84,7 +85,7 @@ func (m *DBMem) Update(idToUpdate int, data Person) {
 // Delete row with ID
 func (m *DBMem) Delete(idToDelete int) {
 	if len(m.Rows) < idToDelete {
-		fmt.Println("ID is out of range")
+		fmt.Println("ID", idToDelete,"is out of range")
 		return
 	}
 
@@ -99,7 +100,6 @@ func (m *DBMem) Delete(idToDelete int) {
 // Start at deleted entry then decrement all rows after
 func (m *DBMem) reindexDb(deletedId int) {
     for i := deletedId; i < len(m.Rows); i++ {
-        fmt.Println("Decrementing", m.Rows[i].ID)
         m.Rows[i].ID = m.Rows[i].ID - 1
     }
 }
