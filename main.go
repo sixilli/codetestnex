@@ -7,32 +7,33 @@ import (
 func main() {
 	fmt.Println("Starting")
 
-	// Uses buntdb
-	InitDB()
-
-	// In memory version
-	dm := InitDBM()
-
+    // Test data
     person := Person{
         FirstName: "Alec",
         LastName: "P",
         Age:  6,
     }
 
+    // Test data
     newPerson := Person{
         FirstName: "Stan",
         LastName: "Guy",
         Age:  10,
     }
 
-	dm.Insert(person)
-	dm.Insert(person)
-	dm.Insert(person)
-	fmt.Println(dm.Get(), "\n")
-	dm.Update(2, newPerson)
-	dm.Delete(3)
-	fmt.Println(dm.Get())
+	// Initializing in memory db
+	dm := InitDBM()
+    for i := 0; i < 20;  i++ {
+        dm.Insert(person)
+    }
+    dm.PrintDB()
+	dm.Update(5, newPerson)
+	dm.Delete(10)
+    dm.PrintDB()
 
+
+	// Uses buntdb
+	InitDB()
 	TestAPIGetAll()
 	CreateRoutes()
 }

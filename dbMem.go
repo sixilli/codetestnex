@@ -20,20 +20,30 @@ func InitDBM() DBMem {
 	return DBMem{}
 }
 
-// Get - Return db contents as string
-func (m *DBMem) Get() []string {
+// Get - Return db contents as a slice of structs
+func (m *DBMem) Get() []Person {
 	if len(m.Rows) == 0 {
 		fmt.Println("Database is empty")
-		return []string{}
+		return []Person{}
 	}
 
 	// Go through each row and jsonify the struct
-	var jsonOutput []string
+	var output []Person
 	for i := 0; i < len(m.Rows); i++ {
-		jsonOutput = append(jsonOutput, m.Rows[i].Data)
+        personStruct := Person{}
+        json.Unmarshal([]byte(m.Rows[i].Data), &personStruct)
+
+		output = append(output, personStruct)
 	}
 
-	return jsonOutput
+	return output
+}
+
+// PrintDB - print contents of the DB with IDs
+func (m *DBMem) PrintDB() {
+    for i := 0; i < len(m.Rows); i++ {
+        fmt.Println("ID:", m.Rows[i].ID, m.Rows[i].Data)
+    }
 }
 
 // Insert new row into the db
@@ -83,12 +93,13 @@ func (m *DBMem) Delete(idToDelete int) {
 		return
 	}
 	m.Rows = append(m.Rows[:idToDelete], m.Rows[idToDelete+1:]...)
-    m.reindexDb()
+    m.reindexDb(idToDelete)
 }
 
-// This can be made faster
-func (m *DBMem) reindexDb() {
-    for i := 1; i < len(m.Rows); i++ {
-        m.Rows[i].ID = i
+// Start at deleted entry then decrement all rows after
+func (m *DBMem) reindexDb(deletedId int) {
+    for i := deletedId; i < len(m.Rows); i++ {
+        fmt.Println("Decrementing", m.Rows[i].ID)
+        m.Rows[i].ID = m.Rows[i].ID - 1
     }
 }
