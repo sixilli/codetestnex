@@ -18,10 +18,15 @@ type testCase struct {
 func TestAPIGetAll() error {
 	testRead := testCase{
 		input:    "",
-		expected: `[{"FirstName":"Alec", "LastName":"Perro", "Age":5},{"FirstName":"Al", "LastName":"Peterson", "Age":6}]`,
+		expected: `[{"FirstName":"Alec", "LastName":"Perro", "Age":5}]`,
 	}
 
-	jsonify, err := json.Marshal(APIGetAll())
+    query, err := dm.Read(1)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+	jsonify, err := json.Marshal(query)
 	if err != nil {
 		log.Fatal(err)
 	}

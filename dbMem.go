@@ -7,6 +7,16 @@ import (
     "errors"
 )
 
+// Person data structure that represents NoSQL data
+type Person struct {
+	FirstName string `json:"FirstName"`
+	LastName  string `json:"LastName"`
+	Age       int    `json:"Age"`
+}
+
+// Persons data structure where each entry is a row from the NoSQL db
+type Persons []Person
+
 type dbEvent struct {
     Op        string `json:"Op"`
     ID        int    `json:"ID"`
@@ -113,15 +123,16 @@ func (m *DBMem) Update(idToUpdate int, data Person) {
 }
 	
 // Delete row with ID
+// IDs are offset so need to add 1
 func (m *DBMem) Delete(idToDelete int) {
-	if len(m.Rows) < idToDelete {
+	if len(m.Rows)+1 < idToDelete {
 		fmt.Println("ID", idToDelete,"is out of range")
 		return
 	}
 
     rowData := m.Rows[idToDelete]
 
-	if len(m.Rows) == idToDelete {
+	if len(m.Rows)+1 == idToDelete {
 		m.Rows = m.Rows[:len(m.Rows)-1]
 		return
 	}

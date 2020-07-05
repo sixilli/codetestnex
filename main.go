@@ -34,7 +34,7 @@ func main() {
 	dm.Delete(10)
 	dm.Delete(2)
 	dm.Delete(4)
-	dm.Delete(19)
+	dm.Delete(19) // This serves as a test for error handeling
     dm.PrintDB()
 
 
