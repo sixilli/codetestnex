@@ -70,9 +70,9 @@ func (c *Client) watchDb() {
         d, newChange := lastChange(c.lastChange)
         id := strconv.Itoa(d.ID)
         if newChange == true {
-            fmt.Println("Found change")
             c.lastChange = d.Timestamp
-            message := []byte(d.Op + id + d.Data + d.Timestamp)
+            formatted := fmt.Sprintf("%s %s %s %s", d.Op, id, d.Data, d.Timestamp)
+            message := []byte(formatted)
             message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
             c.hub.broadcast <- message
         }
