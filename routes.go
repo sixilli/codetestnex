@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-    "text/template"
 
 	"github.com/gorilla/mux"
 )
@@ -15,13 +14,18 @@ import (
 // API update example
 // localhost:8080/update/1/bill/gates/30
 func CreateRoutes() {
+	hub := NewHub()
+	go hub.run()
 	r := mux.NewRouter().StrictSlash(true)
 	r.HandleFunc("/", homePage).Methods("GET")
 	r.HandleFunc("/create/{firstName}/{lastName}/{age}", createEntry).Methods("POST")
 	r.HandleFunc("/read/{id}", readEntry).Methods("GET")
 	r.HandleFunc("/delete/{id}", deleteEntry).Methods("DELETE")
 	r.HandleFunc("/update/{id}/{firstName}/{lastName}/{age}", updateEntry).Methods("PUT")
-	r.HandleFunc("/live", liveUpdate).Methods("GET")
+	r.HandleFunc("/live", ServeLive).Methods("GET")
+	r.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+		ServeWs(hub, w, r)
+	})
 	log.Fatal(http.ListenAndServe(":8080", r))
 }
 
@@ -114,31 +118,3 @@ func updateEntry(w http.ResponseWriter, r *http.Request) {
 
 	dm.Update(id, toUpdate)
 }
-
-
-func liveUpdate(w http.ResponseWriter, r *http.Request) {
-        template := template.New("template")
-        // "doc" is the constant that holds the HTML content
-        template.New("doc").Parse(liveHTML)
-        context := Context{
-            History: dm.History,
-        }
-        template.Lookup("doc").Execute(w, context)
-}
-
-const liveHTML = `
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <title>Nexoff Code Test - Live</title>
-    </head>
-    <body>
-        <h2>Live Updates</h2>
-        <ul>
-            {{range .History}}
-                <li>{{.}}</li>
-            {{end}}
-        </ul>
-    </body>
-</html>
-`

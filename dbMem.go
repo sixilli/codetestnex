@@ -7,10 +7,6 @@ import (
     "errors"
 )
 
-type Context struct {
-    History []dbEvent
-}
-
 type dbEvent struct {
     Op        string `json:"Op"`
     ID        int    `json:"ID"`
