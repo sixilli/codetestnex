@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-var dm = InitDBM()
+var dm DBMem
 
 func main() {
 	fmt.Println("Starting")
@@ -24,6 +24,7 @@ func main() {
     }
 
 	// Initializing in memory db
+    dm = InitDBM()
     for i := 0; i < 20;  i++ {
         dm.Insert(person)
     }
@@ -38,7 +39,5 @@ func main() {
 
 
 	// Uses buntdb
-	InitDB()
-	TestAPIGetAll()
 	CreateRoutes()
 }

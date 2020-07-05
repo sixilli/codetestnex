@@ -1,3 +1,4 @@
+// All of this code is phased out
 package main
 
 import (

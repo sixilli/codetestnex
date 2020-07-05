@@ -4,13 +4,18 @@ import (
 	"encoding/json"
 	"fmt"
     "time"
+    "errors"
 )
+
+type Context struct {
+    History []dbEvent
+}
 
 type dbEvent struct {
     Op        string `json:"Op"`
-    ID        int    `json:ID`
-    Timestamp string `json:Time`
-    Data      string `json:Data`
+    ID        int    `json:"ID"`
+    Timestamp string `json:"Time"`
+    Data      string `json:"Data"`
 }
 
 type dbRow struct {
@@ -54,6 +59,23 @@ func (m *DBMem) PrintDB() {
     for i := 0; i < len(m.Rows); i++ {
         fmt.Println("ID:", m.Rows[i].ID, m.Rows[i].Data)
     }
+}
+
+// Read - returns list of requested ids
+func (m *DBMem) Read(id int) (Person, error) {
+    if len(m.Rows) < id {
+		fmt.Println("ID is out of range")
+		return Person{}, errors.New("ID is out of range")
+	}
+
+	for i := 0; i < len(m.Rows); i++ {
+		if m.Rows[i].ID == id {
+            personStruct := Person{}
+            json.Unmarshal([]byte(m.Rows[i].Data), &personStruct)
+			return personStruct, nil
+		}
+	}
+    return Person{}, errors.New("ID not found")
 }
 
 // Insert new row into the db
