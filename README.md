@@ -1,7 +1,13 @@
 ## Code Test
-All of the code exists within main.go, db.go and routes.go. The extra file hub.go was part of implementing websockets that I didn't have the time to get around to. The websockets would have been used for the endpoint /live that would return live updates. The rest of the CRUD operations should work using BuntDB as the in memory database.
+The API can handle all crud operations and there's an endpoint that updates live with changes to the database after connection. 
 
-The endpoints only take certain types of requests
+| File        | Description     |
+| ------------- |-------------:|
+| dbMem.go      | Implementation of in memory database      |
+| routes.go | Handles all routing for the API      |
+| client.go | Websockt client      |
+| hub.go | Responsible for keeping track of websocket clients      |
+| ws.go | Websocket endpoints and reader/writer functions      |
 
 /         GET
 
@@ -12,3 +18,5 @@ The endpoints only take certain types of requests
 /update   PUT
 
 /delete   ID
+
+/live
