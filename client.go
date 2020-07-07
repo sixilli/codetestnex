@@ -5,7 +5,6 @@ import (
     "fmt"
 	"log"
 	"net/http"
-    "strconv"
     "strings"
 	"time"
 
@@ -47,15 +46,16 @@ type Client struct {
 	history chan []byte
 
     // Last update
-    lastChange string
+    lastChange time.Time
 }
 
-func lastChange(lastChange string) (dbEvent, bool) {
-    lastHistoryItem := dm.History[len(dm.History)-1]
-    if strings.Compare(lastHistoryItem.Timestamp, lastChange) != 0 {
-        return lastHistoryItem, true
+func lastChange(lastChange time.Time) (History, bool) {
+    history := dm.history.Get()
+    lastItem := history[len(history)-1]
+    if strings.Compare(lastItem.timestamp.String(), lastChange.String()) != 0 {
+        return lastItem, true
     }
-    return lastHistoryItem, false
+    return lastItem, false
 }
 
 func (c *Client) watchDb() {
@@ -68,10 +68,10 @@ func (c *Client) watchDb() {
     c.conn.SetPongHandler(func(string) error { c.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
     for {
         d, newChange := lastChange(c.lastChange)
-        id := strconv.Itoa(d.ID)
+        id := d.id
         if newChange == true {
-            c.lastChange = d.Timestamp
-            formatted := fmt.Sprintf("%s %s %s %s", d.Op, id, d.Data, d.Timestamp)
+            c.lastChange = d.timestamp
+            formatted := fmt.Sprintf("%s %v %v %s", d.op, id, d.data, d.timestamp)
             message := []byte(formatted)
             message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
             c.hub.broadcast <- message
@@ -132,7 +132,7 @@ func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-    startTime := dm.History[len(dm.History)-1].Timestamp
+    startTime := dm.history.Get()[len(dm.history.data)-1].timestamp
 	client := &Client{
         hub: hub, 
         conn: conn, 

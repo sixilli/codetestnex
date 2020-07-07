@@ -1,159 +1,117 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-    "time"
     "errors"
+    "sync"
 )
 
-// Person data structure that represents NoSQL data
+// Person data structure that will serve as a schema
 type Person struct {
-	FirstName string `json:"FirstName"`
-	LastName  string `json:"LastName"`
-	Age       int    `json:"Age"`
+	FirstName string
+	LastName  string 
+	Age       int    
 }
 
-// Persons data structure where each entry is a row from the NoSQL db
-type Persons []Person
-
-type dbEvent struct {
-    Op        string `json:"Op"`
-    ID        int    `json:"ID"`
-    Timestamp string `json:"Time"`
-    Data      string `json:"Data"`
-}
-
-type dbRow struct {
-	ID   int    `json:"ID"`
-	Data string `json:"Data"`
-}
-
-// DBMem - This is my take on learning how to create a nice interface
-// to the following group of functions.
-// Might be bad design to add history to this, but makes things easier
+// DBMem to solve race conditions will be managed by the JobStore
 type DBMem struct {
-	Rows []dbRow
-    History []dbEvent
+    data     map[int]Person
+    history  *HistoryStore
+    sync.RWMutex
 }
 
 // InitDBM - Initialize DB in memory that will serve as the parent interface
 func InitDBM() DBMem {
-	return DBMem{}
+	return DBMem{
+        data:    make(map[int]Person),
+        history: InitHistoryStore(),
+    }
 }
 
 // Get - Return db contents as a slice of structs
 func (m *DBMem) Get() []Person {
-	if len(m.Rows) == 0 {
+    m.RLock()
+    defer m.RUnlock()
+	if len(m.data) == 0 {
 		fmt.Println("Database is empty")
 		return []Person{}
 	}
 
-	// Go through each row and convert json to a struct
 	var output []Person
-	for i := 0; i < len(m.Rows); i++ {
-        personStruct := Person{}
-        json.Unmarshal([]byte(m.Rows[i].Data), &personStruct)
-		output = append(output, personStruct)
-	}
-
+    for key := range m.data {
+        output = append(output, m.data[key])
+    }
 	return output
 }
 
 // PrintDB - print contents of the DB with IDs
 func (m *DBMem) PrintDB() {
-    for i := 0; i < len(m.Rows); i++ {
-        fmt.Println("ID:", m.Rows[i].ID, m.Rows[i].Data)
+    m.RLock()
+    defer m.RUnlock()
+    for i := 0; i < len(m.data); i++ {
+        fmt.Println("ID:", i, m.data[i])
     }
 }
 
 // Read - returns list of requested ids
 func (m *DBMem) Read(id int) (Person, error) {
-    if len(m.Rows) < id {
+    m.RLock()
+    defer m.RUnlock()
+    if len(m.data) < id {
 		fmt.Println("ID is out of range")
 		return Person{}, errors.New("ID is out of range")
 	}
+    
+    v, ok := m.data[id]
+    if !ok {
+        return Person{}, errors.New("ID not found")
+    }
 
-	for i := 0; i < len(m.Rows); i++ {
-		if m.Rows[i].ID == id {
-            personStruct := Person{}
-            json.Unmarshal([]byte(m.Rows[i].Data), &personStruct)
-			return personStruct, nil
-		}
-	}
-    return Person{}, errors.New("ID not found")
+    return v, nil
 }
 
 // Insert new row into the db
 func (m *DBMem) Insert(data Person) {
-	id := len(m.Rows) + 1
-
-    bytes, err := json.Marshal(data)
-    if err != nil {
-        fmt.Println(err)
-    }
-
-	newRow := dbRow{ID: id, Data: string(bytes)}
-	m.Rows = append(m.Rows, newRow)
-    m.appendHistory("INSERT", id, newRow.Data, time.Now().String())
+    m.Lock()
+    defer m.Unlock()
+	id := len(m.data) + 1
+    m.data[id] = data
+    m.history.Append("INSERT", id, data)
 }
 
 // Update row
 // Could be greedy, but currently searching for proper ID
 func (m *DBMem) Update(idToUpdate int, data Person) {
-	if len(m.Rows) < idToUpdate {
+    m.Lock()
+    defer m.Unlock()
+	if len(m.data) < idToUpdate {
 		fmt.Println("ID is out of range")
 		return
 	}
-
-    bytes, err := json.Marshal(data)
-    if err != nil {
-        fmt.Println(err)
-    }
-
-	for i := 0; i < len(m.Rows); i++ {
-		if m.Rows[i].ID == idToUpdate {
-			m.Rows[i].Data = string(bytes)
-            m.appendHistory("Update", m.Rows[i].ID, m.Rows[i].Data, time.Now().String())
-			return
-		}
-	}
-
-	fmt.Println("ID not found")
+    m.data[idToUpdate] = data
+    m.history.Append("UPDATE", idToUpdate, data)
 }
 	
-// Delete row with ID
-// IDs are offset so need to add 1
+// Delete row with ID and reindex
 func (m *DBMem) Delete(idToDelete int) {
-	if len(m.Rows)+1 < idToDelete {
+    m.Lock()
+    defer m.Unlock()
+	if len(m.data)+1 < idToDelete {
 		fmt.Println("ID", idToDelete,"is out of range")
 		return
 	}
+    entryToDelete := m.data[idToDelete]
+    delete(m.data, idToDelete)
 
-    rowData := m.Rows[idToDelete]
-
-	if len(m.Rows)+1 == idToDelete {
-		m.Rows = m.Rows[:len(m.Rows)-1]
-		return
-	}
-	m.Rows = append(m.Rows[:idToDelete], m.Rows[idToDelete+1:]...)
-    m.appendHistory("DELETE", rowData.ID, rowData.Data, time.Now().String())
-    m.reindexDb(idToDelete)
-}
-
-// Start at deleted entry then decrement all rows after
-func (m *DBMem) reindexDb(deletedId int) {
-    for i := deletedId; i < len(m.Rows); i++ {
-        m.Rows[i].ID = m.Rows[i].ID - 1
+    // Reindex database where ID > deleted
+    tempMap := make(map[int]Person)
+    for k, v := range m.data {
+        if k > idToDelete {
+            tempMap[k-1] = v
+        }
+        tempMap[k] = v
     }
-}
 
-func (m *DBMem) appendHistory(operation string, id int, data string, timestamp string) {
-    newEvent := dbEvent{
-        Op: operation,
-        ID: id,
-        Data: data,
-        Timestamp: timestamp,
-    }
-    m.History = append(m.History, newEvent)
+    m.data = tempMap
+    m.history.Append("DELETE", idToDelete, entryToDelete)
 }

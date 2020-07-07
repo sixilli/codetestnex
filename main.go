@@ -35,9 +35,6 @@ func main() {
 	dm.Delete(2)
 	dm.Delete(4)
 	dm.Delete(19) // This serves as a test for error handeling
-    dm.PrintDB()
 
-
-	// Uses buntdb
 	CreateRoutes()
 }
