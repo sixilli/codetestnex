@@ -74,7 +74,7 @@ func (m *DBMem) Read(id int) (Person, error) {
 func (m *DBMem) Insert(data Person) {
     m.Lock()
     defer m.Unlock()
-	id := len(m.data) + 1
+	id := len(m.data)
     m.data[id] = data
     m.history.Append("INSERT", id, data)
 }
