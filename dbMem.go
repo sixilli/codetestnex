@@ -103,7 +103,6 @@ func (m *DBMem) Delete(idToDelete int) {
     entryToDelete := m.data[idToDelete]
     delete(m.data, idToDelete)
 
-
     // Reindex database where ID > deleted
     // I think with using .Lock() m.data wasn't updating immediatly so I ignore the key
     tempMap := make(map[int]Person)
@@ -116,8 +115,6 @@ func (m *DBMem) Delete(idToDelete int) {
             tempMap[k] = v
         }
     }
-
-    fmt.Println(tempMap)
 
     m.data = tempMap
     m.history.Append("DELETE", idToDelete, entryToDelete)
