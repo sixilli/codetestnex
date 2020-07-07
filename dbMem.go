@@ -84,7 +84,7 @@ func (m *DBMem) Insert(data Person) {
 func (m *DBMem) Update(idToUpdate int, data Person) {
     m.Lock()
     defer m.Unlock()
-	if len(m.data) < idToUpdate {
+	if len(m.data) <= idToUpdate {
 		fmt.Println("ID is out of range")
 		return
 	}
@@ -96,21 +96,28 @@ func (m *DBMem) Update(idToUpdate int, data Person) {
 func (m *DBMem) Delete(idToDelete int) {
     m.Lock()
     defer m.Unlock()
-	if len(m.data)+1 < idToDelete {
+	if len(m.data) <= idToDelete {
 		fmt.Println("ID", idToDelete,"is out of range")
 		return
 	}
     entryToDelete := m.data[idToDelete]
     delete(m.data, idToDelete)
 
+
     // Reindex database where ID > deleted
+    // I think with using .Lock() m.data wasn't updating immediatly so I ignore the key
     tempMap := make(map[int]Person)
     for k, v := range m.data {
-        if k > idToDelete {
+        switch{
+        case k > idToDelete:
             tempMap[k-1] = v
+        case k == idToDelete:
+        default:
+            tempMap[k] = v
         }
-        tempMap[k] = v
     }
+
+    fmt.Println(tempMap)
 
     m.data = tempMap
     m.history.Append("DELETE", idToDelete, entryToDelete)

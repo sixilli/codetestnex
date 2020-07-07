@@ -10,13 +10,6 @@ func main() {
 	fmt.Println("Starting")
 
     // Test data
-    person := Person{
-        FirstName: "Alec",
-        LastName: "P",
-        Age:  6,
-    }
-
-    // Test data
     newPerson := Person{
         FirstName: "Stan",
         LastName: "Guy",
@@ -26,7 +19,11 @@ func main() {
 	// Initializing in memory db
     dm = InitDBM()
     for i := 0; i < 20;  i++ {
-        dm.Insert(person)
+        dm.Insert(Person{
+            FirstName: "Alec",
+            LastName: "p",
+            Age: i,
+        })
     }
     dm.PrintDB()
     fmt.Println("--------------Testing Update and Delete--------------")
@@ -35,6 +32,7 @@ func main() {
 	dm.Delete(2)
 	dm.Delete(4)
 	dm.Delete(19) // This serves as a test for error handeling
+    dm.PrintDB()
 
 	CreateRoutes()
 }
