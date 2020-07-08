@@ -8,6 +8,7 @@ The API can handle all crud operations and there's an endpoint that updates live
 | client.go | Websockt client      |
 | hub.go | Responsible for keeping track of websocket clients      |
 | ws.go | Websocket endpoints and reader/writer functions      |
+| dbBuffers.go | History of DB changes      |
 
 /         GET
 
