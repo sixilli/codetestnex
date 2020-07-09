@@ -32,6 +32,7 @@ func InitDBM() DBMem {
 func (m *DBMem) Get() []Person {
     m.RLock()
     defer m.RUnlock()
+
 	if len(m.data) == 0 {
 		fmt.Println("Database is empty")
 		return []Person{}
@@ -48,6 +49,7 @@ func (m *DBMem) Get() []Person {
 func (m *DBMem) PrintDB() {
     m.RLock()
     defer m.RUnlock()
+
     for i := 0; i < len(m.data); i++ {
         fmt.Println("ID:", i, m.data[i])
     }
@@ -57,6 +59,7 @@ func (m *DBMem) PrintDB() {
 func (m *DBMem) Read(id int) (Person, error) {
     m.RLock()
     defer m.RUnlock()
+
     if len(m.data) < id {
 		fmt.Println("ID is out of range")
 		return Person{}, errors.New("ID is out of range")
@@ -74,6 +77,7 @@ func (m *DBMem) Read(id int) (Person, error) {
 func (m *DBMem) Insert(data Person) {
     m.Lock()
     defer m.Unlock()
+
 	id := len(m.data)
     m.data[id] = data
     m.history.Append("INSERT", id, data)
@@ -84,6 +88,7 @@ func (m *DBMem) Insert(data Person) {
 func (m *DBMem) Update(idToUpdate int, data Person) {
     m.Lock()
     defer m.Unlock()
+
 	if len(m.data) <= idToUpdate {
 		fmt.Println("ID is out of range")
 		return
@@ -96,6 +101,7 @@ func (m *DBMem) Update(idToUpdate int, data Person) {
 func (m *DBMem) Delete(idToDelete int) {
     m.Lock()
     defer m.Unlock()
+
 	if len(m.data) <= idToDelete {
 		fmt.Println("ID", idToDelete,"is out of range")
 		return
